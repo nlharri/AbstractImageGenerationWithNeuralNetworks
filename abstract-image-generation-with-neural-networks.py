@@ -8,10 +8,6 @@ from tqdm import tqdm
 from skimage.color import hsv2rgb
 from PIL import Image
 
-#tf.keras.backend.set_learning_phase(1)
-#init = tf.global_variables_initializer() # <<<<<<<<< 1
-#init = initializers.VarianceScaling(scale=variance)
-
 # --------------------------------------------
 # define default constants for generation
 # --------------------------------------------
@@ -28,15 +24,6 @@ VARIANCE = 60
 # --------------------------------------------
 tf.set_random_seed(RANDOM_SEED)
 np.random.seed(RANDOM_SEED)
-
-# --------------------------------------------
-# create a random number of normal distribtion:
-#  - mean = 0
-#  - standard deviation = 1
-#  - generate only 1 number (this is the third parameter)
-# https://www.sharpsightlabs.com/blog/numpy-random-normal/
-# --------------------------------------------
-#rnd_normal = np.random.normal(0,1,1)
 
 # --------------------------------------------
 # generate grids
@@ -95,19 +82,6 @@ img = np.dstack(img)
 if channels == 3: img = hsv2rgb(img)
 img = (img * 255).astype(np.uint8)
 img = img.squeeze()
-
-
-# n = min(len(img), 9)
-# rows = int(math.sqrt(n))
-# cols = n // rows
-# fig = plt.figure()
-# for i in range(1, n+1):
-#     image = img[i-1]
-#     fig.add_subplot(rows, cols, i)
-#     plt.axis("off")
-#     plt.imshow(image)
-# plt.show()
-
 
 if not os.path.exists("./results"): os.makedirs("./results")
 print("results are saved to: {}".format("./results"))
