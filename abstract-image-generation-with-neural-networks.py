@@ -13,11 +13,11 @@ import imageio
 # --------------------------------------------
 # define default constants for generation
 # --------------------------------------------
-IMAGE_WIDTH = 512
-IMAGE_HEIGHT = 512
+IMAGE_WIDTH = 1920
+IMAGE_HEIGHT = 1080
 SCALE = 1.0
-RANDOM_SEED = 7893
-MAXVARIANCESTEPS = 20
+RANDOM_SEED = 7894
+MAXVARIANCESTEPS = 1
 
 # --------------------------------------------
 # generate grid
@@ -46,18 +46,26 @@ def generate_grid():
 # --------------------------------------------
 def build_model(number_of_input_params, variance, black_and_white = False, layer_width = 32, neural_network_depth = 8, activation=tf.tanh):
 
+    # --------------------------------------------
+    # set random seeds
+    # --------------------------------------------
+    tf.set_random_seed(RANDOM_SEED)
+    np.random.seed(RANDOM_SEED)
+
     init = tf.keras.initializers.VarianceScaling(scale=variance)
 
-    input_layer = output_layer = tf.keras.layers.Input(shape=(number_of_input_params,))
+    input_layer = output_layer = tf.keras.layers.Input(
+        shape=(number_of_input_params,))
 
     for _ in range(0, neural_network_depth):
         output_layer = tf.keras.layers.Dense(
             layer_width,
             kernel_initializer=init,
-            activation=activation)(output_layer)
+            activation='tanh')(output_layer)
 
     output_layer = tf.keras.layers.Dense(
         1 if black_and_white else 3,
+        kernel_initializer=init,
         activation='tanh')(output_layer)
 
     model = tf.keras.models.Model(inputs=input_layer, outputs=output_layer)
@@ -71,20 +79,20 @@ def build_model(number_of_input_params, variance, black_and_white = False, layer
 # --------------------------------------------
 if __name__ == "__main__":
 
-    # --------------------------------------------
-    # set random seeds
-    # --------------------------------------------
-    tf.set_random_seed(RANDOM_SEED)
-    np.random.seed(RANDOM_SEED)
-
     x, y = generate_grid()
     concatenated_params = np.concatenate(np.array((x,y)), axis=1)
 
     filenames = []
-    for variancestep in range(1, MAXVARIANCESTEPS):
-        variance = variancestep * 1
+    for variancestep in range(0, MAXVARIANCESTEPS):
+        #variance = (variancestep+1) * 0.09 + 2.5
+        variance = (variancestep+11) * 0.9 + 2.5
 
-        model = build_model(number_of_input_params=2, variance=variance, black_and_white = True, neural_network_depth=6)
+        model = build_model(
+            number_of_input_params=2, 
+            variance=variance, 
+            black_and_white = False, 
+            layer_width = 32)
+        
         pred = model.predict(concatenated_params)
 
         img = []
@@ -100,20 +108,18 @@ if __name__ == "__main__":
         img = img.squeeze()
 
         if not os.path.exists("./results"): os.makedirs("./results")
-        print("results are saved to: {}".format("./results"))
 
         timestr = time.strftime("%Y%m%d-%H%M%S")
-        #suffix = f".var{VARIANCE:.0f}.seed{RANDOM_SEED}"
-        suffix = f".var{variance:.0f}.seed{RANDOM_SEED}"
-        image_name = f"img.{timestr}{suffix}.png"
+        suffix = ".var{:.4f}.seed{}".format(variance, RANDOM_SEED)
+        image_name = "img.{}{}.png".format(timestr, suffix)
         image_path = os.path.join("./results", image_name)
-        # this is new
-        filenames.append(image_path)
+        print("results are saved to: {}".format(image_path))
         file = Image.fromarray(img)
         file.save(image_path)
+        filenames.append(image_path)
 
 
-    with imageio.get_writer('./movie.gif', mode='I', duration=0.2) as writer:
+    with imageio.get_writer('./results/movie.gif', mode='I', duration=0.25) as writer:
         for filename in filenames:
             image = imageio.imread(filename)
             writer.append_data(image)
