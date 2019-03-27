@@ -2,13 +2,9 @@
 
 Based on https://github.com/janhuenermann/blog/blob/master/abstract-art-with-ml/script.py
 
-## Useful Numpy functions
+## Prerequisites
 
-### ravel
-
-Return a contiguous flattened array.
-
-
+```pip install --upgrade tensorflow ipykernel numpy jupyter matplotlib tensorflow_datasets scikit-image imageio Pillow tqdm```
 
 ## TODO
 
