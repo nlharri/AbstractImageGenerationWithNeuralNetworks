@@ -6,6 +6,15 @@ Based on https://github.com/janhuenermann/blog/blob/master/abstract-art-with-ml/
 
 ```pip install --upgrade tensorflow ipykernel numpy jupyter matplotlib tensorflow_datasets scikit-image imageio Pillow tqdm```
 
+## Additional mayavi installation
+
+```
+pip install mayavi
+pip install PyQt5
+jupyter nbextension install --py mayavi --user
+jupyter nbextension enable --py mayavi --user
+```
+
 ## TODO
 
 ### Understand the following
