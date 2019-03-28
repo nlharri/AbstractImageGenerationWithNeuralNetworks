@@ -4,7 +4,7 @@ Based on https://github.com/janhuenermann/blog/blob/master/abstract-art-with-ml/
 
 ## Prerequisites
 
-```pip install --upgrade tensorflow ipykernel numpy jupyter matplotlib tensorflow_datasets scikit-image imageio Pillow tqdm```
+```pip install --upgrade tensorflow ipykernel numpy jupyter matplotlib tensorflow_datasets scikit-image imageio Pillow tqdm plaidml-keras plaidbench```
 
 ## Additional mayavi installation
 
