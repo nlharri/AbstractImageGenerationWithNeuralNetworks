@@ -18,13 +18,14 @@ os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
 # --------------------------------------------
 # define default constants for generation
 # --------------------------------------------
-IMAGE_WIDTH = 640
-IMAGE_HEIGHT = 480
+IMAGE_WIDTH = 1920
+IMAGE_HEIGHT = 1080
 SCALE = 1.0
-RANDOM_SEED = 38472
-VARIANCE = 5.5
-NUMBER_OF_IMAGES_TO_GENERATE = 50
+RANDOM_SEED = 5243
+VARIANCE = 7.5
+NUMBER_OF_IMAGES_TO_GENERATE = 1
 RESULTS_FOLDER = "./results"
+BLACK_AND_WHITE = False
 
 # --------------------------------------------
 # generate grid
@@ -46,7 +47,10 @@ def generate_grid(mixin):
     x = np.ravel(X).reshape(-1, 1)
     y = np.ravel(Y).reshape(-1, 1)
     #r = np.sqrt(x ** 2 + y ** 2)
-    r = np.add(x ** 2, y ** 2)
+    if y.any() != 0:
+        r = np.add(x ** 2, np.divide(np.sin(y),y) ** 2)
+    else:
+        r = np.add(x ** 2, 1)
 
     Z = np.repeat(mixin, x.shape[0]).reshape(-1, x.shape[0])
 
@@ -102,7 +106,7 @@ if __name__ == "__main__":
     model = build_model(
         number_of_input_params=len(params),
         variance=VARIANCE,
-        black_and_white = True,
+        black_and_white = BLACK_AND_WHITE,
         layer_width = 32)
 
     print("results are saved to {}".format(RESULTS_FOLDER))
@@ -156,7 +160,7 @@ if __name__ == "__main__":
             VARIANCE,
             RANDOM_SEED),
         mode='I',
-        duration=0.25) as writer:
+        duration=0.08) as writer:
         for filename in filenames:
             image = imageio.imread(filename)
             writer.append_data(image)
