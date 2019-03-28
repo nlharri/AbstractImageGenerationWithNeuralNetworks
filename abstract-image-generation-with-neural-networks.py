@@ -11,18 +11,25 @@ from PIL import Image
 import imageio
 
 # --------------------------------------------
+# set PlaidML as the Keras backend. This will enable HW acceleration.
+# --------------------------------------------
+os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
+
+# --------------------------------------------
 # define default constants for generation
 # --------------------------------------------
-IMAGE_WIDTH = 1920
-IMAGE_HEIGHT = 1080
+IMAGE_WIDTH = 640
+IMAGE_HEIGHT = 480
 SCALE = 1.0
-RANDOM_SEED = 7894
-MAXVARIANCESTEPS = 1
+RANDOM_SEED = 38472
+VARIANCE = 5.5
+NUMBER_OF_IMAGES_TO_GENERATE = 50
+RESULTS_FOLDER = "./results"
 
 # --------------------------------------------
 # generate grid
 # --------------------------------------------
-def generate_grid():
+def generate_grid(mixin):
     mean = np.mean((IMAGE_WIDTH, IMAGE_HEIGHT))
     x = np.linspace(
         -IMAGE_WIDTH / mean * SCALE,
@@ -38,13 +45,23 @@ def generate_grid():
 
     x = np.ravel(X).reshape(-1, 1)
     y = np.ravel(Y).reshape(-1, 1)
+    #r = np.sqrt(x ** 2 + y ** 2)
+    r = np.add(x ** 2, y ** 2)
 
-    return x, y
+    Z = np.repeat(mixin, x.shape[0]).reshape(-1, x.shape[0])
+
+    return x, y, Z.T, r
 
 # --------------------------------------------
 # build the model
 # --------------------------------------------
-def build_model(number_of_input_params, variance, black_and_white = False, layer_width = 32, neural_network_depth = 8, activation=tf.tanh):
+def build_model(
+    number_of_input_params,
+    variance,
+    black_and_white = False,
+    layer_width = 32,
+    neural_network_depth = 8,
+    activation='tanh'):
 
     # --------------------------------------------
     # set random seeds
@@ -61,7 +78,7 @@ def build_model(number_of_input_params, variance, black_and_white = False, layer
         output_layer = tf.keras.layers.Dense(
             layer_width,
             kernel_initializer=init,
-            activation='tanh')(output_layer)
+            activation=activation)(output_layer)
 
     output_layer = tf.keras.layers.Dense(
         1 if black_and_white else 3,
@@ -79,20 +96,26 @@ def build_model(number_of_input_params, variance, black_and_white = False, layer
 # --------------------------------------------
 if __name__ == "__main__":
 
-    x, y = generate_grid()
-    concatenated_params = np.concatenate(np.array((x,y)), axis=1)
+    params = generate_grid(1.0)
+    concatenated_params = np.concatenate(np.array(params), axis=1)
+
+    model = build_model(
+        number_of_input_params=len(params),
+        variance=VARIANCE,
+        black_and_white = True,
+        layer_width = 32)
+
+    print("results are saved to {}".format(RESULTS_FOLDER))
+
+    pbar = tqdm(total=NUMBER_OF_IMAGES_TO_GENERATE)
 
     filenames = []
-    for variancestep in range(0, MAXVARIANCESTEPS):
-        #variance = (variancestep+1) * 0.09 + 2.5
-        variance = (variancestep+11) * 0.9 + 2.5
+    for current_image_index in range(0, NUMBER_OF_IMAGES_TO_GENERATE):
 
-        model = build_model(
-            number_of_input_params=2, 
-            variance=variance, 
-            black_and_white = False, 
-            layer_width = 32)
-        
+        params = generate_grid(
+            mixin = 0.5 * current_image_index / NUMBER_OF_IMAGES_TO_GENERATE)
+        concatenated_params = np.concatenate(np.array(params), axis=1)
+
         pred = model.predict(concatenated_params)
 
         img = []
@@ -107,19 +130,33 @@ if __name__ == "__main__":
         img = (img * 255).astype(np.uint8)
         img = img.squeeze()
 
-        if not os.path.exists("./results"): os.makedirs("./results")
+        if not os.path.exists(RESULTS_FOLDER): os.makedirs(RESULTS_FOLDER)
 
         timestr = time.strftime("%Y%m%d-%H%M%S")
-        suffix = ".var{:.4f}.seed{}".format(variance, RANDOM_SEED)
+        suffix = ".idx{}.var{:.4f}.seed{}".format(
+            current_image_index,
+            VARIANCE,
+            RANDOM_SEED)
         image_name = "img.{}{}.png".format(timestr, suffix)
-        image_path = os.path.join("./results", image_name)
-        print("results are saved to: {}".format(image_path))
+        image_path = os.path.join(RESULTS_FOLDER, image_name)
+        #print("results are saved to: {}".format(image_path))
         file = Image.fromarray(img)
         file.save(image_path)
         filenames.append(image_path)
 
+        pbar.update(1)
 
-    with imageio.get_writer('./results/movie.gif', mode='I', duration=0.25) as writer:
+    pbar.close()
+
+    timestr = time.strftime("%Y%m%d-%H%M%S")
+    with imageio.get_writer(
+        "{}/movie.{}.var{:.4f}.seed{}.gif".format(
+            RESULTS_FOLDER,
+            timestr,
+            VARIANCE,
+            RANDOM_SEED),
+        mode='I',
+        duration=0.25) as writer:
         for filename in filenames:
             image = imageio.imread(filename)
             writer.append_data(image)
