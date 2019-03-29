@@ -9,8 +9,10 @@ Based on https://github.com/janhuenermann/blog/blob/master/abstract-art-with-ml/
 ## Additional mayavi installation
 
 ```
-pip install mayavi
-pip install PyQt5
+pip install -U vtk
+pip install -U ipython
+pip install -U mayavi
+pip install -U PyQt5
 jupyter nbextension install --py mayavi --user
 jupyter nbextension enable --py mayavi --user
 ```
